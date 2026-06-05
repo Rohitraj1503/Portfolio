@@ -215,6 +215,7 @@ export default function ProjectCenter() {
                   src={activeProj.image}
                   alt={activeProj.title}
                   fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 800px"
                   className="object-cover group-hover:scale-105 transition-transform duration-700"
                 />
                 

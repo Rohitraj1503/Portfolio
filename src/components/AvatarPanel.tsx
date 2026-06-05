@@ -33,6 +33,7 @@ export default function AvatarPanel() {
               src="/profile.jpg"
               alt="Rohit Raj Avatar"
               fill
+              sizes="(max-width: 768px) 100vw, 192px"
               className="object-cover transition-transform duration-500 hover:scale-105"
               priority
             />
