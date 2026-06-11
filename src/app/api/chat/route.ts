@@ -52,15 +52,28 @@ export async function POST(request: Request) {
       );
     }
 
-    // Map history to Gemini api content structure
-    // Role mapping: "user" -> "user", "jarvis" -> "model"
-    const contents = messages.map((msg: { sender: "user" | "jarvis"; text: string }) => ({
-      role: msg.sender === "user" ? "user" : "model",
-      parts: [{ text: msg.text }],
-    }));
+    // Map history to Gemini API content structure ensuring it starts with user and alternates
+    const contents: any[] = [];
+    for (const msg of messages) {
+      const role = msg.sender === "user" ? "user" : "model";
+      // Skip the very first message if it is from the model (Gemini requires the first content to be from user)
+      if (contents.length === 0 && role === "model") {
+        continue;
+      }
+      
+      // Merge consecutive messages with the same role to maintain alternating roles requirement
+      if (contents.length > 0 && contents[contents.length - 1].role === role) {
+        contents[contents.length - 1].parts[0].text += "\n" + msg.text;
+      } else {
+        contents.push({
+          role,
+          parts: [{ text: msg.text }],
+        });
+      }
+    }
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: {

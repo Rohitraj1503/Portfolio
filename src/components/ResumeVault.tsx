@@ -53,7 +53,9 @@ export default function ResumeVault() {
 
         <div className="flex flex-col gap-3 font-mono">
           <a
-            href="#"
+            href="/rohitraj_cv.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
             className="flex items-center justify-between p-4 bg-primary/10 border border-primary/20 hover:border-primary rounded-xl text-xs text-white hover:bg-primary/20 transition-all cursor-pointer group"
           >
             <span className="flex items-center gap-3">
@@ -64,7 +66,7 @@ export default function ResumeVault() {
           </a>
 
           <a
-            href="#"
+            href="/rohitraj_cv.pdf"
             download="Rohit_Raj_Resume.pdf"
             className="flex items-center justify-between p-4 bg-black/40 border border-white/10 hover:border-primary rounded-xl text-xs text-white hover:bg-white/5 transition-all cursor-pointer group"
           >
