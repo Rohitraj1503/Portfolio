@@ -49,7 +49,7 @@ export default function Hero({ onProjectsClick, onContactClick, onResumeClick }:
   }, [currentText, isDeleting, currentTextIdx]);
 
   const socials = [
-    { icon: <GithubIcon size={18} />, href: "https://github.com/rohitraj", name: "GitHub" },
+    { icon: <GithubIcon size={18} />, href: "https://github.com/Rohitraj1503", name: "GitHub" },
     { icon: <LinkedinIcon size={18} />, href: "https://linkedin.com/in/rohitraj", name: "LinkedIn" },
     { icon: <Mail size={18} />, href: "mailto:rohitraj@gmail.com", name: "Email" },
     { icon: <Code size={18} />, href: "https://leetcode.com/rohitraj", name: "LeetCode" },

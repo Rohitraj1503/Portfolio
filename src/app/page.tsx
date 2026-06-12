@@ -235,7 +235,7 @@ export default function Home() {
               </div>
 
               <div className="flex gap-6 text-[10px] text-white/50">
-                <a href="https://github.com/rohitraj" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">GITHUB</a>
+                <a href="https://github.com/Rohitraj1503" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">GITHUB</a>
                 <a href="https://linkedin.com/in/rohitraj" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">LINKEDIN</a>
                 <a href="mailto:rohitraj@gmail.com" className="hover:text-primary transition-colors">EMAIL</a>
               </div>

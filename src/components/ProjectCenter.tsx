@@ -33,7 +33,7 @@ export default function ProjectCenter() {
         "Geospatial mapping tracking climate-sensitive asset sectors",
         "Real-time scoring sandbox simulation console for underwriters",
       ],
-      github: "https://github.com/rohitraj/climate-credit-scoring",
+      github: "https://github.com/Rohitraj1503/climate-credit-score-engine",
       live: "#",
       image: "/climate_hud.png",
       metrics: [
@@ -54,7 +54,7 @@ export default function ProjectCenter() {
         "Optimized ACID schemas preventing stock race conditions",
         "Unified admin console monitoring real-time transaction reports",
       ],
-      github: "https://github.com/rohitraj/bookverse",
+      github: "https://github.com/Rohitraj1503/Bookverse",
       live: "#",
       image: "/bookverse_hud.png",
       metrics: [
@@ -75,7 +75,7 @@ export default function ProjectCenter() {
         "Real-time WebSocket alerts sync driver and merchant screens",
         "Optimized address mapping via PostGIS extension queries",
       ],
-      github: "https://github.com/rohitraj/quick-commerce",
+      github: "https://github.com/Rohitraj1503/hyperlocal-platform",
       live: "#",
       image: "/commerce_hud.png",
       metrics: [
