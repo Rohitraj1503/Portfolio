@@ -35,7 +35,9 @@ Guidelines:
 
 export async function POST(req: Request) {
   console.log("API Route Hit");
-  console.log("Gemini Key Exists:", !!process.env.GEMINI_API_KEY);
+  console.log("NODE_ENV:", process.env.NODE_ENV);
+  console.log("GEMINI_API_KEY exists:", !!process.env.GEMINI_API_KEY);
+  console.log("Available env keys:", Object.keys(process.env).filter(k => k.includes("GEMINI")));
   console.log("Request Body:", req.body);
 
   try {
