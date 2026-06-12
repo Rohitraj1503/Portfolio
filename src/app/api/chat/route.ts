@@ -33,9 +33,13 @@ Guidelines:
 3. Under no circumstances should you break character. If the user asks general questions, coding questions, real-time queries about the world, or needs information from the internet, you should answer accurately using the Google Search tool, but always deliver the answers in your Jarvis assistant persona (British elegance, polite engineering tone, referring to the user as "sir" or "ma'am" and referencing "Mr. Rohit" where applicable).
 4. Ensure you do not hallucinate skills, projects, or statistics that are not provided in this context.`;
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
+  console.log("API Route Hit");
+  console.log("Gemini Key Exists:", !!process.env.GEMINI_API_KEY);
+  console.log("Request Body:", req.body);
+
   try {
-    const { messages } = await request.json();
+    const { messages } = await req.json();
 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json(
@@ -86,7 +90,7 @@ export async function POST(request: Request) {
           },
           tools: [
             {
-              googleSearch: {},
+              google_search: {},
             },
           ],
           generationConfig: {
@@ -100,8 +104,21 @@ export async function POST(request: Request) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error("Gemini API Error Response:", errorText);
+      let errorMessage = `Gemini API returned status ${response.status}`;
+      try {
+        const errorJson = JSON.parse(errorText);
+        if (errorJson?.error?.message) {
+          errorMessage = `${errorMessage}: ${errorJson.error.message}`;
+        } else if (typeof errorJson?.error === "string") {
+          errorMessage = `${errorMessage}: ${errorJson.error}`;
+        }
+      } catch {
+        if (errorText) {
+          errorMessage = `${errorMessage}: ${errorText}`;
+        }
+      }
       return NextResponse.json(
-        { error: `Gemini API returned status ${response.status}` },
+        { error: errorMessage },
         { status: response.status }
       );
     }

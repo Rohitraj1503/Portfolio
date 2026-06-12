@@ -73,8 +73,15 @@ export default function ChatAssistant() {
         }),
       });
 
+      let errorMessage = "";
       if (!response.ok) {
-        throw new Error("Telemetry response status error");
+        try {
+          const errData = await response.json();
+          errorMessage = errData.error || `HTTP ${response.status}`;
+        } catch {
+          errorMessage = `HTTP ${response.status}`;
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -82,13 +89,14 @@ export default function ChatAssistant() {
 
       setMessages((prev) => [...prev, { sender: "jarvis", text: reply }]);
       playChatBeep(900, 0.01);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Chat transmission error:", err);
+      const displayMsg = `SYSTEM WARNING: Telemetry transmission failure (${err.message || "Unknown error"}). Secure uplink to Jarvis mainframe interrupted. Please re-engage.`;
       setMessages((prev) => [
         ...prev,
         {
           sender: "jarvis",
-          text: "SYSTEM WARNING: Telemetry transmission failure. Secure uplink to Jarvis mainframe interrupted. Please re-engage.",
+          text: displayMsg,
         },
       ]);
       playChatBeep(400, 0.02);
