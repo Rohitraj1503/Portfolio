@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { ExternalLink, ChevronLeft, ChevronRight, Activity, Cpu, Sparkles } from "lucide-react";
 import { GithubIcon } from "./SocialIcons";
+import { getAudioContext } from "@/utils/audioHelper";
 
 interface Project {
   id: string;
@@ -102,9 +103,8 @@ export default function ProjectCenter() {
 
   const playDashboardBeep = () => {
     try {
-      const ctxClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (!ctxClass) return;
-      const ctx = new ctxClass();
+      const ctx = getAudioContext();
+      if (!ctx) return;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = "sine";
@@ -115,6 +115,11 @@ export default function ProjectCenter() {
       gain.connect(ctx.destination);
       osc.start();
       osc.stop(ctx.currentTime + 0.05);
+
+      osc.onended = () => {
+        osc.disconnect();
+        gain.disconnect();
+      };
     } catch {
       // Ignore
     }

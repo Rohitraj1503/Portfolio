@@ -3,171 +3,135 @@
 import { useEffect, useRef, useState } from "react";
 
 export function useWebAudio() {
-  const [isPlaying, setIsPlaying] = useState(false);
+  // Start with isPlaying as true by default so it shows as active in the UI
+  const [isPlaying, setIsPlaying] = useState(true);
+  const isPlayingRef = useRef(true);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
-  const mainGainRef = useRef<GainNode | null>(null);
-  const oscillatorsRef = useRef<OscillatorNode[]>([]);
-  const intervalsRef = useRef<NodeJS.Timeout[]>([]);
+  const gainNodeRef = useRef<GainNode | null>(null);
 
-  // Function to create a spacey pad chord
-  const startSynth = () => {
-    if (audioCtxRef.current) return;
+  const startMusic = async () => {
+    if (!audioRef.current) return;
 
-    // Create audio context
-    const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    const ctx = new AudioContextClass();
-    audioCtxRef.current = ctx;
+    try {
+      // Create Web Audio context if not already done, for smooth crossfades and volume control
+      if (!audioCtxRef.current) {
+        const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        const ctx = new AudioContextClass();
+        audioCtxRef.current = ctx;
 
-    // Main volume gain
-    const mainGain = ctx.createGain();
-    mainGain.gain.setValueAtTime(0, ctx.currentTime);
-    // Smooth ramp in to prevent clicks
-    mainGain.gain.linearRampToValueAtTime(0.12, ctx.currentTime + 2.0);
-    mainGain.connect(ctx.destination);
-    mainGainRef.current = mainGain;
-
-    // Lowpass filter for the cyber warmth
-    const filter = ctx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.setValueAtTime(450, ctx.currentTime);
-    filter.Q.setValueAtTime(3, ctx.currentTime);
-    filter.connect(mainGain);
-
-    // Filter LFO to make it "breathe"
-    const filterLFO = ctx.createOscillator();
-    filterLFO.frequency.setValueAtTime(0.08, ctx.currentTime); // very slow: 1 cycle per ~12s
-    const lfoGain = ctx.createGain();
-    lfoGain.gain.setValueAtTime(200, ctx.currentTime);
-    filterLFO.connect(lfoGain);
-    lfoGain.connect(filter.frequency);
-    filterLFO.start();
-    oscillatorsRef.current.push(filterLFO);
-
-    // Create 3 basic nodes for minor/major chord progression
-    const freqs = [110, 165, 220, 330]; // A2, E3, A3, E4 base chord
-    const oscillators = freqs.map((f, i) => {
-      const osc = ctx.createOscillator();
-      // Alternating waveforms for rich harmonics
-      osc.type = i % 2 === 0 ? "sawtooth" : "triangle";
-      osc.frequency.setValueAtTime(f, ctx.currentTime);
-
-      const oscGain = ctx.createGain();
-      oscGain.gain.setValueAtTime(0.02, ctx.currentTime);
-      
-      // Slow pan effect
-      const panner = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
-      if (panner) {
-        panner.pan.setValueAtTime(i % 2 === 0 ? -0.5 : 0.5, ctx.currentTime);
-        osc.connect(oscGain);
-        oscGain.connect(panner);
-        panner.connect(filter);
-      } else {
-        osc.connect(oscGain);
-        oscGain.connect(filter);
+        // Source node from audio element
+        const source = ctx.createMediaElementSource(audioRef.current);
+        const gainNode = ctx.createGain();
+        
+        gainNode.connect(ctx.destination);
+        source.connect(gainNode);
+        gainNodeRef.current = gainNode;
       }
 
-      osc.start();
-      return osc;
-    });
+      const ctx = audioCtxRef.current;
+      const gainNode = gainNodeRef.current;
 
-    oscillatorsRef.current.push(...oscillators);
+      // Resume context if suspended (browser security policy)
+      if (ctx.state === "suspended") {
+        await ctx.resume();
+      }
 
-    // Telemetry scan beep function (simulates radar scanner)
-    const playTelemetryPulse = () => {
-      if (!audioCtxRef.current || audioCtxRef.current.state === "suspended") return;
-      const now = audioCtxRef.current.currentTime;
-      
-      // Pitch sweeps
-      const osc = audioCtxRef.current.createOscillator();
-      const gainNode = audioCtxRef.current.createGain();
-      
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(1200, now);
-      osc.frequency.exponentialRampToValueAtTime(100, now + 1.2);
-      
-      gainNode.gain.setValueAtTime(0.005, now);
-      gainNode.gain.exponentialRampToValueAtTime(0.00001, now + 1.2);
-      
-      osc.connect(gainNode);
-      gainNode.connect(mainGain);
-      osc.start();
-      osc.stop(now + 1.3);
-    };
+      // Start playing the audio element
+      isPlayingRef.current = true;
+      setIsPlaying(true);
+      await audioRef.current.play();
 
-    // Synthesized chord sequence: shifts harmonies over time
-    let step = 0;
-    const chords = [
-      [110, 165, 220, 330], // Am (A, E, A, E)
-      [116.54, 174.61, 233.08, 349.23], // A# / Bb (Bb, F, Bb, F)
-      [98, 146.83, 196, 293.66], // G (G, D, G, D)
-      [110, 165, 220, 329.63] // Am
-    ];
-
-    const chordInterval = setInterval(() => {
-      if (!audioCtxRef.current || audioCtxRef.current.state === "suspended") return;
-      step = (step + 1) % chords.length;
-      const nextChord = chords[step];
-      const now = audioCtxRef.current.currentTime;
-      
-      // Map base oscillators to new frequencies smoothly
-      oscillators.forEach((osc, idx) => {
-        if (nextChord[idx]) {
-          osc.frequency.exponentialRampToValueAtTime(nextChord[idx], now + 2.0);
+      // Smooth fade-in over 2.0 seconds to 0.15 volume (low and professional background level)
+      if (gainNode) {
+        gainNode.gain.cancelScheduledValues(ctx.currentTime);
+        gainNode.gain.setValueAtTime(gainNode.gain.value, ctx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 2.0);
+      }
+    } catch (err) {
+      console.warn("Autoplay block or playback error: will retry on first user interaction.", err);
+      // Fallback: play directly through Audio element if Web Audio context fails
+      try {
+        if (audioRef.current) {
+          audioRef.current.volume = 0.15;
+          isPlayingRef.current = true;
+          setIsPlaying(true);
+          await audioRef.current.play();
         }
-      });
-
-      // Play telemetry sound on transition
-      if (Math.random() > 0.4) {
-        playTelemetryPulse();
+      } catch (fallbackErr) {
+        // This is expected if browser blocks autoplay before user interaction
       }
-    }, 8000);
-
-    intervalsRef.current.push(chordInterval);
-
-    // Initial pulse
-    playTelemetryPulse();
+    }
   };
 
-  const stopSynth = () => {
-    if (mainGainRef.current && audioCtxRef.current) {
-      const now = audioCtxRef.current.currentTime;
-      mainGainRef.current.gain.cancelScheduledValues(now);
-      mainGainRef.current.gain.setValueAtTime(mainGainRef.current.gain.value, now);
-      mainGainRef.current.gain.linearRampToValueAtTime(0, now + 0.5);
+  const stopMusic = () => {
+    if (!audioRef.current) return;
+
+    isPlayingRef.current = false;
+    setIsPlaying(false);
+
+    const ctx = audioCtxRef.current;
+    const gainNode = gainNodeRef.current;
+
+    if (ctx && gainNode) {
+      // Smooth fade-out over 0.8 seconds
+      gainNode.gain.cancelScheduledValues(ctx.currentTime);
+      gainNode.gain.setValueAtTime(gainNode.gain.value, ctx.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.8);
 
       setTimeout(() => {
-        intervalsRef.current.forEach(clearInterval);
-        intervalsRef.current = [];
-        oscillatorsRef.current.forEach(osc => {
-          try { osc.stop(); } catch { /* ignore */ }
-        });
-        oscillatorsRef.current = [];
-        if (audioCtxRef.current) {
-          audioCtxRef.current.close();
+        // Only pause if the user didn't hit play again during the fade-out
+        if (audioRef.current && !isPlayingRef.current) { 
+          audioRef.current.pause();
         }
-        audioCtxRef.current = null;
-        mainGainRef.current = null;
-      }, 600);
+      }, 850);
+    } else {
+      audioRef.current.pause();
     }
   };
 
   const toggleMusic = () => {
-    if (isPlaying) {
-      stopSynth();
-      setIsPlaying(false);
+    if (isPlayingRef.current) {
+      stopMusic();
     } else {
-      startSynth();
-      setIsPlaying(true);
+      startMusic();
     }
   };
 
-  // Cleanup on unmount
+  // Initialize and handle autoplay
   useEffect(() => {
+    const audio = new Audio("/audio/ambient.mp3");
+    audio.loop = true;
+    audio.volume = 0; // Hand over volume control to Web Audio GainNode
+    audioRef.current = audio;
+
+    // 1. Try to start music immediately (may be blocked by browser autoplay policy)
+    startMusic();
+
+    // 2. Setup one-time interaction listeners to trigger playback on first click/scroll/keypress
+    const handleFirstInteraction = () => {
+      if (isPlayingRef.current && audioRef.current && audioRef.current.paused) {
+        startMusic();
+      }
+      // Remove listeners after first interaction
+      removeListeners();
+    };
+
+    const removeListeners = () => {
+      window.removeEventListener("click", handleFirstInteraction);
+      window.removeEventListener("keydown", handleFirstInteraction);
+      window.removeEventListener("touchstart", handleFirstInteraction);
+      window.removeEventListener("wheel", handleFirstInteraction);
+    };
+
+    window.addEventListener("click", handleFirstInteraction);
+    window.addEventListener("keydown", handleFirstInteraction);
+    window.addEventListener("touchstart", handleFirstInteraction);
+    window.addEventListener("wheel", handleFirstInteraction);
+
     return () => {
-      intervalsRef.current.forEach(clearInterval);
-      oscillatorsRef.current.forEach(osc => {
-        try { osc.stop(); } catch { /* ignore */ }
-      });
+      audio.pause();
+      removeListeners();
       if (audioCtxRef.current) {
         audioCtxRef.current.close();
       }

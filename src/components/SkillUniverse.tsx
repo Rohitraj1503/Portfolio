@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Orbit, Sparkles, Star, Layers, Cpu, Code2 } from "lucide-react";
+import { getAudioContext } from "@/utils/audioHelper";
 
 interface SkillNode {
   name: string;
@@ -284,9 +285,8 @@ export default function SkillUniverse() {
 
   const playClickBeep = () => {
     try {
-      const ctxClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (!ctxClass) return;
-      const ctx = new ctxClass();
+      const ctx = getAudioContext();
+      if (!ctx) return;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = "sine";
@@ -297,6 +297,11 @@ export default function SkillUniverse() {
       gain.connect(ctx.destination);
       osc.start();
       osc.stop(ctx.currentTime + 0.06);
+
+      osc.onended = () => {
+        osc.disconnect();
+        gain.disconnect();
+      };
     } catch {
       // Ignore
     }

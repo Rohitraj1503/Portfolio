@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageSquareCode, X, Bot, CornerDownLeft } from "lucide-react";
+import { getAudioContext } from "@/utils/audioHelper";
 
 interface Message {
   sender: "user" | "jarvis";
@@ -29,9 +30,8 @@ export default function ChatAssistant() {
 
   const playChatBeep = (freq = 700, vol = 0.005) => {
     try {
-      const ctxClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (!ctxClass) return;
-      const ctx = new ctxClass();
+      const ctx = getAudioContext();
+      if (!ctx) return;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = "sine";
@@ -42,6 +42,11 @@ export default function ChatAssistant() {
       gain.connect(ctx.destination);
       osc.start();
       osc.stop(ctx.currentTime + 0.05);
+
+      osc.onended = () => {
+        osc.disconnect();
+        gain.disconnect();
+      };
     } catch {
       // Ignore
     }

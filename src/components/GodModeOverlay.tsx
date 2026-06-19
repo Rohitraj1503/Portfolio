@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShieldAlert, Zap, Terminal } from "lucide-react";
 import confetti from "canvas-confetti";
+import { getAudioContext } from "@/utils/audioHelper";
 
 interface GodModeOverlayProps {
   isActive: boolean;
@@ -51,9 +52,8 @@ export default function GodModeOverlay({ isActive, onClose }: GodModeOverlayProp
 
   const playAlarmSound = () => {
     try {
-      const ctxClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (!ctxClass) return;
-      const ctx = new ctxClass();
+      const ctx = getAudioContext();
+      if (!ctx) return;
       
       // Siren sweep
       const now = ctx.currentTime;
@@ -75,6 +75,11 @@ export default function GodModeOverlay({ isActive, onClose }: GodModeOverlayProp
       gain.connect(ctx.destination);
       osc.start();
       osc.stop(now + 2.3);
+
+      osc.onended = () => {
+        osc.disconnect();
+        gain.disconnect();
+      };
     } catch {
       // Ignore
     }

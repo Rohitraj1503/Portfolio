@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { getAudioContext } from "@/utils/audioHelper";
 
 interface LoadingScreenProps {
   onComplete: () => void;
@@ -37,9 +38,8 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
 
   const playTickSound = () => {
     try {
-      const ctxClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (!ctxClass) return;
-      const ctx = new ctxClass();
+      const ctx = getAudioContext();
+      if (!ctx) return;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = "sine";
@@ -50,6 +50,11 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
       gain.connect(ctx.destination);
       osc.start();
       osc.stop(ctx.currentTime + 0.06);
+
+      osc.onended = () => {
+        osc.disconnect();
+        gain.disconnect();
+      };
     } catch {
       // Ignore audio block errors
     }
@@ -57,9 +62,8 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
 
   const playCompleteSound = () => {
     try {
-      const ctxClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (!ctxClass) return;
-      const ctx = new ctxClass();
+      const ctx = getAudioContext();
+      if (!ctx) return;
       const osc = ctx.createOscillator();
       const osc2 = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -81,6 +85,18 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
       osc2.start();
       osc.stop(ctx.currentTime + 0.6);
       osc2.stop(ctx.currentTime + 0.6);
+
+      let endedCount = 0;
+      const handleEnded = () => {
+        endedCount++;
+        if (endedCount === 2) {
+          osc.disconnect();
+          osc2.disconnect();
+          gain.disconnect();
+        }
+      };
+      osc.onended = handleEnded;
+      osc2.onended = handleEnded;
     } catch {
       // Ignore
     }

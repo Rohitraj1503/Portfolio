@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Terminal as TerminalIcon, CornerDownLeft, Sparkles } from "lucide-react";
+import { getAudioContext } from "@/utils/audioHelper";
 
 interface TerminalProps {
   isOpen: boolean;
@@ -52,9 +53,8 @@ export default function Terminal({ isOpen, onClose, triggerGodMode }: TerminalPr
 
   const playTerminalBeep = (freq = 800, duration = 0.05) => {
     try {
-      const ctxClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (!ctxClass) return;
-      const ctx = new ctxClass();
+      const ctx = getAudioContext();
+      if (!ctx) return;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = "sine";
@@ -65,6 +65,11 @@ export default function Terminal({ isOpen, onClose, triggerGodMode }: TerminalPr
       gain.connect(ctx.destination);
       osc.start();
       osc.stop(ctx.currentTime + duration + 0.01);
+
+      osc.onended = () => {
+        osc.disconnect();
+        gain.disconnect();
+      };
     } catch {
       // Ignore
     }

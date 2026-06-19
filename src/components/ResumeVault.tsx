@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FileText, Download, Eye, Sparkles, BookOpen, GraduationCap, Cpu, ShieldCheck } from "lucide-react";
+import { getAudioContext } from "@/utils/audioHelper";
 
 export default function ResumeVault() {
   const [currentPage, setCurrentPage] = useState(1);
@@ -16,9 +17,8 @@ export default function ResumeVault() {
 
   const playFlipSound = () => {
     try {
-      const ctxClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (!ctxClass) return;
-      const ctx = new ctxClass();
+      const ctx = getAudioContext();
+      if (!ctx) return;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = "triangle";
@@ -30,6 +30,11 @@ export default function ResumeVault() {
       gain.connect(ctx.destination);
       osc.start();
       osc.stop(ctx.currentTime + 0.16);
+
+      osc.onended = () => {
+        osc.disconnect();
+        gain.disconnect();
+      };
     } catch {
       // Ignore
     }

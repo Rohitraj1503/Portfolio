@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Activity, Volume2 } from "lucide-react";
+import { getAudioContext } from "@/utils/audioHelper";
 
 interface LogoNode {
   name: string;
@@ -18,9 +19,8 @@ export default function TechStackLogos() {
   // Sound effects helper
   const playClickSound = (freq = 600, duration = 0.08) => {
     try {
-      const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (!AudioContextClass) return;
-      const ctx = new AudioContextClass();
+      const ctx = getAudioContext();
+      if (!ctx) return;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = "sine";
@@ -31,6 +31,11 @@ export default function TechStackLogos() {
       gain.connect(ctx.destination);
       osc.start();
       osc.stop(ctx.currentTime + duration + 0.02);
+
+      osc.onended = () => {
+        osc.disconnect();
+        gain.disconnect();
+      };
     } catch {
       // Ignored
     }
