@@ -133,7 +133,7 @@ export default function ResumeVault() {
                   <div className="bg-white/5 border border-white/5 p-2 rounded">
                     <div className="font-bold text-white text-[9px] flex justify-between">
                       <span>SRM Institute of Science & Tech</span>
-                      <span>2023 - 2027</span>
+                      <span>2024 - 2028</span>
                     </div>
                     <p className="text-white/60">B.Tech in Computer Science Engineering</p>
                     <p className="text-primary/95 font-semibold">CGPA: 8.65 / 10.0</p>
